@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"grpc/greet/greetpb"
+	"io"
 	"log"
 	"net"
 	"strconv"
@@ -15,7 +16,7 @@ import (
 type server struct{}
 
 func (*server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb.GreetResponse, error) {
-	fmt.Printf("[+] Greet function was invoked with %v", req)
+	fmt.Printf("[+] Greet function was invoked with %v\n", req)
 	firstName := req.GetGreeting().GetFirstName()
 	result := "Hello " + firstName
 	// using & because its a pointer to a greetresponse
@@ -25,8 +26,30 @@ func (*server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb.G
 	return res, nil
 }
 
+func (*server) LongGreet(stream greetpb.GreetService_LongGreetServer) error {
+	fmt.Println("[+] Greet function was invoked with a streaming request")
+	result := ""
+
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			// Finished reading stream
+			return stream.SendAndClose(&greetpb.LongGreetResponse{
+				Result: result,
+			})
+		}
+
+		if err != nil {
+			log.Fatalf("[*] Error while reading stream: %v", err)
+		}
+
+		firstName := req.GetGreeting().GetFirstName()
+		result += "Hello " + firstName + "! "
+	}
+}
+
 func (*server) GreetManyTimes(req *greetpb.GreetManyTimesRequest, stream greetpb.GreetService_GreetManyTimesServer) error {
-	fmt.Printf("[+] GreetManyTimes function was invoked with %v", req)
+	fmt.Printf("[+] GreetManyTimes function was invoked with %v\n", req)
 	firstName := req.GetGreeting().GetFirstName()
 
 	for i := 0; i < 10; i++ {
@@ -44,7 +67,7 @@ func (*server) GreetManyTimes(req *greetpb.GreetManyTimesRequest, stream greetpb
 func main() {
 	lis, err := net.Listen("tcp", "0.0.0.0:50051")
 	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
+		log.Fatalf("Failed to listen: %v\n", err)
 	}
 
 	fmt.Println("Server open on port 50051")
@@ -53,7 +76,7 @@ func main() {
 	greetpb.RegisterGreetServiceServer(s, &server{})
 
 	if err := s.Serve(lis); err != nil {
-		log.Fatalf("Failed open server: %v", err)
+		log.Fatalf("Failed open server: %v\n", err)
 	}
 
 }
