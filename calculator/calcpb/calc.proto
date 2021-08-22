@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package calc;
+option go_package = "calcpb";
+
+message Calculation {
+    int64 first_int = 1;
+    int64 second_int = 2;
+}
+
+message CalcRequest {
+    Calculation calculation = 1;
+}
+
+message CalcResponse {
+    int64 result = 1;
+}
+
+message PrimeNumberDecomposeRequest {
+    int64 primeNumber = 1;
+}
+
+message PrimeNumberDecomposeResponse {
+    int64 result = 1;
+}
+
+service CalcService{
+    // Unary
+    rpc Calc(CalcRequest) returns (CalcResponse){};
+
+    // Server streaming
+    rpc PrimeNumberDecompose(PrimeNumberDecomposeRequest) returns (stream PrimeNumberDecomposeResponse){};
+}
