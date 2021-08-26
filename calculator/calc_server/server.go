@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"grpc/calculator/calcpb"
 	"log"
+	"math"
 	"net"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type server struct{}
@@ -24,6 +27,20 @@ func (*server) Calc(ctx context.Context, req *calcpb.CalcRequest) (*calcpb.CalcR
 	}
 
 	return res, nil
+}
+
+func (*server) SquareRoot(ctx context.Context, req *calcpb.SquareRootRequest) (*calcpb.SquareRootResponse, error) {
+	fmt.Println("[+] Unary error call")
+	number := req.GetNumber()
+	if number < 0 {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			fmt.Sprintf("\nReceived a negative number: %v", number),
+		)
+	}
+	return &calcpb.SquareRootResponse{
+		NumberRoot: math.Sqrt(float64(number)),
+	}, nil
 }
 
 func (*server) PrimeNumberDecompose(req *calcpb.PrimeNumberDecomposeRequest, stream calcpb.CalcService_PrimeNumberDecomposeServer) error {
